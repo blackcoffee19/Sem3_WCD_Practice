@@ -1,112 +1,98 @@
 package vn.aptech.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import javax.persistence.Query;
 
 import vn.aptech.entity.Book;
 
 public class BookDao {
-	private Connection connectDb () throws ClassNotFoundException, SQLException{
-		Class.forName("com.mysql.cj.jdbc.Driver");
-		String url = "jdbc:mysql://localhost:3306/practice";
-		return DriverManager.getConnection(url, "root","1313");
-	}
+	EntityManagerFactory emf = Persistence.createEntityManagerFactory("testJpaPU");
 	public List<Book> findAll(){
+		EntityManager em = emf.createEntityManager();
 		List<Book> result =  new ArrayList<>();
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("SELECT * FROM books");
-			ResultSet rs =stm.executeQuery();
-			while(rs.next()) {
-				Book bk = new Book();
-				bk.setBookCode(rs.getString(1));
-				bk.setTitle(rs.getString(2));
-				bk.setPrice(rs.getInt(3));
-				bk.setPublisher(rs.getString(4));
-				result.add(bk);
+			em.getTransaction().begin();
+			Query q = em.createQuery("SELECT o FROM Book o");
+			if(q.getResultList()!=null) {
+				result.addAll(q.getResultList());			
 			}
-			rs.close();
-			stm.close();
-			con.close();
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result;
 	}
 	public boolean create(Book book){
+		EntityManager em = emf.createEntityManager();
 		boolean result = false;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("INSERT INTO books (bookCode,title,price,publisher) VALUES (?,?,?,?)");
-			stm.setString(1,book.getBookCode());
-			stm.setString(2, book.getTitle());
-			stm.setInt(3, book.getPrice());
-			stm.setString(4, book.getPublisher());
-			result = stm.executeUpdate() >0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			em.persist(book);
+			em.getTransaction().commit();
+			result = true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
 			result = false;
+		}finally {
+			em.close();
 		}
 		return result;
 	}
 	public Book findByCode(String code) {
+		EntityManager em = emf.createEntityManager();
 		Book result = new Book();
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("SELECT * FROM books WHERE bookCode=?");
-			stm.setString(1, code);
-			ResultSet res = stm.executeQuery();
-			while(res.next()) {
-				result.setBookCode(res.getString(1));
-				result.setTitle(res.getString(2));
-				result.setPrice(res.getInt(3));
-				result.setPublisher(res.getString(4));
-			}
-			res.close();
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			result = em.find(Book.class, code);
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result;
 		
 	}
 	public boolean update(Book book) {
+		EntityManager em = emf.createEntityManager();
 		boolean result =false ;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("UPDATE books SET title=?,price=?,publisher=?WHERE bookCode=?");
-			stm.setString(1, book.getTitle());
-			stm.setInt(2, book.getPrice());
-			stm.setString(3, book.getPublisher());
-			stm.setString(4, book.getBookCode());
-			result = stm.executeUpdate()>0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			em.merge(book);
+			em.getTransaction().commit();
+			result=true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result ;
 	}
 	public boolean delete(String code) {
+		EntityManager em = emf.createEntityManager();
 		boolean result =false ;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("DELETE FROM books WHERE bookCode=?");
-			stm.setString(1, code);
-			int num = stm.executeUpdate();
-			result = num>0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			Query q = em.createQuery("DELETE FROM Book WHERE bookCode=:bookCode");
+			q.setParameter("bookCode", code);
+			result = q.executeUpdate()>0? true:false;
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result ;
 	}

@@ -8,104 +8,103 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import javax.persistence.Query;
+
 import vn.aptech.entity.Phone;
 
 public class PhoneDao {
-	private Connection connectDb () throws ClassNotFoundException, SQLException{
-		Class.forName("com.mysql.cj.jdbc.Driver");
-		String url = "jdbc:mysql://localhost:3306/practice";
-		return DriverManager.getConnection(url, "root","1313");
-	}
+	EntityManagerFactory emf =Persistence.createEntityManagerFactory("phoneJPA");
+	/*
+	 * private Connection connectDb () throws ClassNotFoundException, SQLException{
+	 * Class.forName("com.mysql.cj.jdbc.Driver"); String url =
+	 * "jdbc:mysql://localhost:3306/practice"; return
+	 * DriverManager.getConnection(url, "root","1313"); }
+	 */
 	public List<Phone> findAll(){
+		EntityManager em = emf.createEntityManager();
 		List<Phone> result =  new ArrayList<>();
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("SELECT * FROM phone");
-			ResultSet rs =stm.executeQuery();
-			while(rs.next()) {
-				Phone phone = new Phone();
-				phone.setPId(rs.getInt(1));
-				phone.setName(rs.getString(2));
-				phone.setPrice(rs.getInt(3));
-				phone.setImage(rs.getString(4));
-				result.add(phone);
+			em.getTransaction().begin();
+			Query q = em.createQuery("SELECT o FROM Phone o");
+			if(q.getResultList()!=null) {
+				result.addAll(q.getResultList());			
 			}
-			rs.close();
-			stm.close();
-			con.close();
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result;
 	}
 	public boolean create(Phone phone){
+		EntityManager em = emf.createEntityManager();
 		boolean result = false;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("INSERT INTO phone (name,price,image) VALUES (?,?,?)");
-			stm.setString(1, phone.getName());
-			stm.setInt(2, phone.getPrice());
-			stm.setString(3, phone.getImage());
-			result = stm.executeUpdate() >0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			em.persist(phone);
+			em.getTransaction().commit();
+			result = true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
 			result = false;
+		}finally {
+			em.close();
 		}
 		return result;
 	}
 	public Phone findById(int id) {
+		EntityManager em = emf.createEntityManager();
 		Phone result = new Phone();
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("SELECT * FROM phone WHERE pId=?");
-			stm.setInt(1, id);
-			ResultSet res = stm.executeQuery();
-			while(res.next()) {
-				result.setPId(res.getInt(1));
-				result.setName(res.getString(2));
-				result.setPrice(res.getInt(3));
-				result.setImage(res.getString(4));
-			}
-			res.close();
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			result = em.find(Phone.class, id);
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result;
 		
 	}
 	public boolean update(Phone phone) {
+		EntityManager em = emf.createEntityManager();
 		boolean result =false ;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("UPDATE phone SET name=?,price=?,image=? WHERE pId=?");
-			stm.setString(1, phone.getName());
-			stm.setInt(2, phone.getPrice());
-			stm.setString(3, phone.getImage());
-			stm.setInt(4, phone.getPId());
-			result = stm.executeUpdate()>0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			em.merge(phone);
+			em.getTransaction().commit();
+			result=true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+			result =false;
+		}finally {
+			em.close();
 		}
 		return result ;
 	}
 	public boolean delete(int id) {
+		EntityManager em = emf.createEntityManager();
 		boolean result =false ;
 		try {
-			Connection con = connectDb();
-			PreparedStatement stm = con.prepareStatement("DELETE FROM phone WHERE pId=?");
-			stm.setInt(1, id);
-			int num = stm.executeUpdate();
-			result = num>0;
-			stm.close();
-			con.close();
+			em.getTransaction().begin();
+			Query q = em.createQuery("DELETE FROM Phone WHERE pId=:id");
+			q.setParameter("id", id);
+			result = q.executeUpdate()>0? true:false;
+			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
+			em.getTransaction().rollback();
+		}finally {
+			em.close();
 		}
 		return result ;
 	}

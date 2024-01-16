@@ -97,6 +97,11 @@ public class ProcessServlet extends HttpServlet {
 			switch (a) {
 			case "Create": {
 				String name= request.getParameter("name");
+				if(name.isEmpty()|| name==null) {
+					session.setAttribute("error", "Name Phone is required");
+					request.getRequestDispatcher("/phone/createPhone.jsp").forward(request, response);
+					return;
+				}
 				String priceS = request.getParameter("price");
 				int price =0 ;
 				try {
@@ -142,6 +147,11 @@ public class ProcessServlet extends HttpServlet {
 			case "Update": {
 				String idS = request.getParameter("id");
 				String name= request.getParameter("name");
+				if(name.isEmpty()|| name==null) {
+					session.setAttribute("error", "Error Update Failue. Name Phone is required");
+					response.sendRedirect("ProcessServlet");
+					return;
+				}
 				String priceS = request.getParameter("price");
 				String image = request.getParameter("image");
 				int price =0,id =0;

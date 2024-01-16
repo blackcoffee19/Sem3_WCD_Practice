@@ -80,6 +80,11 @@ public class ProcessServlet extends HttpServlet {
 				String priceS = request.getParameter("price");
 				String publisher = request.getParameter("publisher");
 				int price =0 ;
+				if(bookCode.isEmpty()|| bookCode==null || title.isEmpty() || title==null||publisher.isEmpty()||publisher==null ) {
+					session.setAttribute("error", "BookCode, Title, Publisher is required");
+					request.getRequestDispatcher("/book/create.jsp").forward(request, response);
+					return;
+				}
 				try {
 					price = Integer.parseInt(priceS);
 					if(price <0) {
@@ -114,17 +119,22 @@ public class ProcessServlet extends HttpServlet {
 				String title= request.getParameter("title");
 				String priceS = request.getParameter("price");
 				String publisher = request.getParameter("publisher");
+				if(code.isEmpty()|| code==null || title.isEmpty() || title==null||publisher.isEmpty()||publisher==null ) {
+					session.setAttribute("error", "Update Failue. Title, Publisher is required");
+					response.sendRedirect("ProcessServlet?a=DisplayList");
+					return;
+				}
 				int price =0;
 				try {
 					price = Integer.parseInt(priceS);
 					if(price<0) {
-						session.setAttribute("error", "Price Must be greater than 0");
+						session.setAttribute("error", "Update Failue. Price Must be greater than 0");
 						response.sendRedirect("ProcessServlet?a=DisplayList");
 						return;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-					session.setAttribute("error", "Price Must be a number");
+					session.setAttribute("error", "Update Failue. Price Must be a number");
 					response.sendRedirect("ProcessServlet?a=DisplayList");
 					return;
 				}
